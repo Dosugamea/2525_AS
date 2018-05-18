@@ -19,32 +19,53 @@ def filesize(bytesize):
         return roundstr(bytesize / (1024.0 ** 4)) + ' TB'
     else:
         return str(bytesize) + ' B'
-def js_resp(jsdata):
-    r = HTTPResponse(status=200, body=json.dumps(jsdata))
-    r.set_header('Content-Type', 'application/json')
-    return r
-
-#ダウンロードを開始する(URLをPOSTする)
-# (別プロセスで開始する
-@route('/add',method='POST')
-def start_download():
-    Popen('python download.py', creationflags=CREATE_NEW_CONSOLE)
-    return js_resp({"Message":"OK"})
-
-#ダウンロード済みであるかどうかをURLから調べる(URLをPOSTする)
-# (ダウンロード済みなら Found でなければ NotFoundを返す
-@route('/check',method="GET")
-def check_download():
-    file_name = "sm9"
-    print(request.body.readlines())
+def check_exist(file_name):
     files = []
     for e in ('*.flv','*.mp4'):
         files.extend(glob.glob(e))
     for f in files:
         if file_name in f and ".mp4" in f\
         or file_name in f and ".flv" in f:
-            return js_resp({"Message":"Found"})
-    return js_resp({"Message":"NotFound"})
+            return f
+    return False
+def js_resp(jsdata):
+    r = HTTPResponse(status=200, body=json.dumps(jsdata))
+    r.set_header('Content-Type', 'application/json')
+    r.set_header('Access-Control-Allow-Origin','*')
+    return r
+
+#ダウンロードを開始する(URLをPOSTする)
+# (別プロセスで開始する
+@route('/add',method='GET')
+def start_download():
+    try:
+        url = request.query['url']
+        id = url[url.find("watch/")+6:]
+        if (id.isdigit() and len(id) < 9)\
+        or "sm" in id or "so" in id:
+            if check_exist(id) == False:
+                Popen('python download.py %s'%(id), creationflags=CREATE_NEW_CONSOLE)
+                return js_resp({"Message":"OK"})
+            else:
+                return js_resp({"Message":"Already Exist"})
+        else:
+            return js_resp({"Message":"Not MovieID"})
+    except:
+        return js_resp({"Message":"Not URL"})
+
+#ダウンロード済みであるかどうかをURLから調べる(URLをPOSTする)
+# (ダウンロード済みなら Found でなければ NotFoundを返す
+@route('/check',method="GET")
+def check_download():
+    try:
+        url = request.query['url']
+        file_name = url[url.find("watch/")+6:]
+        if check_exist(file_name) == False:
+            return js_resp({"Message":"NotExist"})
+        else:
+            return js_resp({"Message":"Exist"})
+    except:
+        return js_resp({"Message":"Not URL"})
 
 #ダウンロード状態のリストをJSONで返す
 #(flv/mp4 を先にダウンロードして
@@ -59,9 +80,10 @@ def list_download():
     for v in videos:
         d = {"Name":"","Stat":"","Size":"","Date":""}
         d["Name"] = v.replace(".mp4","").replace(".flv","")
+        id = d["Name"][:d["Name"].find("_")]
         found = False
         for f in files:
-            if d["Name"] in f and "xml" in f:
+            if id in f and "xml" in f:
                 d["Stat"] = "Complete"
                 found = True
                 break
@@ -72,12 +94,18 @@ def list_download():
     return js_resp(retd)
 
 #動画を直接再生する(サーバーにエラーが湧きまくるが一応動くと思われる)
-@route("/play")
+@route("/play",method="GET")
 def play():
-    return static_file('sample.mp4',root='Direct_path')
+    url = request.query['url']
+    file_name = url[url.find("watch/")+6:]
+    file = check_exist(file_name)
+    if file == False:
+        return js_resp({"Message":"NotExists"})
+    else:
+        return static_file(file,root='.')
 
 #変な呼び出し方をされたらエラーを返す
-@route('/add',method="GET")
+@route('/add',method="POST")
 def error():
     return js_resp({"Error":"Incorrect Parameter"})
 
