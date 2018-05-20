@@ -78,16 +78,13 @@ def list_download():
         videos.extend(glob.glob(e))
     retd = []
     for v in videos:
-        d = {"Name":"","Stat":"","Size":"","Date":""}
+        d = {"Name":"","Stat":"Downloading","Size":"","Date":""}
         d["Name"] = v.replace(".mp4","").replace(".flv","")
         id = d["Name"][:d["Name"].find("_")]
-        found = False
         for f in files:
             if id in f and "xml" in f:
                 d["Stat"] = "Complete"
-                found = True
                 break
-        if not found: d["Stat"] = "Downloading"
         d["Date"] = datetime.fromtimestamp(os.path.getctime(v)).strftime('%Y-%m-%d %H:%M:%S')
         d["Size"] = filesize(os.path.getsize(v))
         retd.append(d)
@@ -103,10 +100,5 @@ def play():
         return js_resp({"Message":"NotExists"})
     else:
         return static_file(file,root='.')
-
-#変な呼び出し方をされたらエラーを返す
-@route('/add',method="POST")
-def error():
-    return js_resp({"Error":"Incorrect Parameter"})
 
 run(host='localhost', port=8080, debug=True)
