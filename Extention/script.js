@@ -1,12 +1,12 @@
 //テーブルを読み込む
-function load_table(){
+function load_table(saba){
 	$('tbody').empty();
-	$.getJSON(server+"/list", function(json){
+	$.getJSON(saba+"/list", function(json){
 		var rows = "";
 		for (i = 0; i < json.length; i++) {
 			id = json[i]["Name"].slice(0,json[i]["Name"].indexOf("_"))
 			rows += "<tr>";
-			rows += "<td>"+"<a href='"+server+"/play?url=http://www.nicovideo.jp/watch/"+id+"'>"+json[i]["Name"].slice(json[i]["Name"].indexOf("_")+1)+"</a>"+"</td>";
+			rows += "<td>"+"<a href='"+saba+"/play?url=http://www.nicovideo.jp/watch/"+id+"'>"+json[i]["Name"].slice(json[i]["Name"].indexOf("_")+1)+"</a>"+"</td>";
 			rows += "<td>"+id+"</td>";
 			rows += "<td>"+json[i]["Stat"]+"</td>";
 			rows += "<td>"+json[i]["Size"]+"</td>";
@@ -36,9 +36,11 @@ function shiboru(){
 //画面構築完了後
 $(function() {
 	//サーバーアドレス指定
-	server = "http://localhost:8080";
+	chrome.storage.local.get("server_address", function(result){
+		load_table(result.server_address);
+	});
 	//テーブルにデータを取得
-	load_table()
+	
 	//再読み込みする
 	$("#reload").click(function(){
 		load_table()

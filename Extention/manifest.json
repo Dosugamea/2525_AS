@@ -1,24 +1,32 @@
 {
   "name": "NicoSave",
+  "author": "ドマオー",
   "description": "右クリックしてニコニコ動画を保存",
+  "homepage_url": "https://twitter.com/DsgamerMario7",
   "version": "0.01",
+  "offline_enabled": false,
   "manifest_version": 2,
+   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "content_scripts": [{
     "matches": ["http://www.nicovideo.jp/watch/*"],
-    "js": ["background.js"]
+    "js": ["check.js"]
   }],
   "background": {
-        "scripts": ["background.js"],
+        "scripts": ["install.js"],
         "persistent": false
   },
   "permissions": [
     "contextMenus",
-    "tabs"
+    "tabs",
+    "storage"
   ],
   "icons": {
-    "16": "nico.png"
+    "48": "nico.png"
   },
   "browser_action": {
-    "default_popup": "about.html"
-  }
+    "default_icon": "nico.png",
+    "default_title": "NicoSave",
+    "default_popup": "Option.html"
+  },
+  "options_page": "Option.html"
 }
